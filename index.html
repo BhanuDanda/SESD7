@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ride Hailing Patterns — Observer, Strategy, Command (Demo)</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#98a0b3;--accent:#00c2a8}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial; margin:0; background:linear-gradient(180deg,#071226, #081428); color:#e6eef6}
+    .app{max-width:1100px;margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;gap:12px}
+    h1{margin:0;font-size:20px}
+    .flex{display:flex;gap:12px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.03); padding:14px;border-radius:12px}
+    .controls{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:14px}
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    input,select,button{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit}
+    button{cursor:pointer}
+    .log{height:220px;overflow:auto;background:#06101a;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.02)}
+    .row{display:flex;gap:8px}
+    .small{font-size:13px}
+    .muted{color:var(--muted)}
+    footer{margin-top:18px;color:var(--muted);font-size:13px}
+    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .btn-primary{background:var(--accent);color:#042026;border:0}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="card" style="padding:10px;display:flex;align-items:center;gap:12px">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M3 11l2-5h14l2 5v6a2 2 0 0 1-2 2h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a2 2 0 0 1-2-2v-6z" stroke="#00c2a8" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>
+          <h1>Ride-Hailing Patterns Demo</h1>
+          <div class="muted small">Observer • Strategy • Command — interactive design</div>
+        </div>
+      </div>
+    </header>
+
+    <main style="margin-top:14px">
+      <div class="grid3">
+
+        <section class="card">
+          <h3 style="margin-top:0">Entities</h3>
+          <div class="small muted">Create Riders & Drivers</div>
+          <div class="controls" style="margin-top:10px">
+            <div>
+              <label>Rider name</label>
+              <input id="riderName" placeholder="e.g. Alice" />
+              <button id="createRider" style="margin-top:8px">Create Rider</button>
+            </div>
+            <div>
+              <label>Driver name</label>
+              <input id="driverName" placeholder="e.g. Bob" />
+              <button id="createDriver" style="margin-top:8px">Create Driver</button>
+            </div>
+            <div style="grid-column:1/3;margin-top:6px">
+              <label>Active Riders</label>
+              <select id="ridersList" size="4" style="width:100%"></select>
+            </div>
+            <div style="grid-column:1/3;margin-top:6px">
+              <label>Available Drivers</label>
+              <select id="driversList" size="4" style="width:100%"></select>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-top:0">Ride Request (Observer)</h3>
+          <div class="small muted">When drivers accept or cancel, rider gets notified immediately.</div>
+          <div style="margin-top:10px">
+            <label>Selected Rider</label>
+            <select id="selectedRider"></select>
+            <label style="margin-top:8px">Choose fare strategy</label>
+            <select id="fareStrategy">
+              <option value="normal">Normal Fare</option>
+              <option value="surge">Surge Pricing (1.5x)</option>
+              <option value="discount">Discount (20% off)</option>
+            </select>
+            <label style="margin-top:8px">Distance (km)</label>
+            <input id="distance" type="number" value="8" min="1" />
+            <div style="margin-top:8px" class="row">
+              <button class="btn-primary" id="bookBtn">Book Ride (Command)</button>
+              <button id="showRideBtn">Show Active Ride</button>
+              <button id="clearLog">Clear Log</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-top:0">Driver Actions</h3>
+          <div class="small muted">Drivers are observers & can accept/cancel for visible RideRequests.</div>
+          <label>Choose driver</label>
+          <select id="actionDriver"></select>
+          <div style="margin-top:8px" class="row">
+            <button id="acceptRide">Accept</button>
+            <button id="cancelRide">Cancel</button>
+            <button id="rateRide">Rate Ride</button>
+          </div>
+          <div style="margin-top:10px">
+            <label>Rating (1-5)</label>
+            <input id="rating" type="number" min="1" max="5" value="5" />
+          </div>
+        </section>
+
+      </div>
+
+      <section style="margin-top:12px" class="card">
+        <h3 style="margin-top:0">Command Log & Notifications</h3>
+        <div class="row" style="gap:10px;margin-bottom:8px">
+          <div style="flex:1">
+            <div class="muted small">System Log</div>
+            <div id="log" class="log"></div>
+          </div>
+          <div style="width:320px">
+            <div class="muted small">Active Ride</div>
+            <pre id="activeRide" class="log" style="height:220px"></pre>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        This single-file demo organizes the system using Observer (ride notifications), Strategy (fare calculators), and Command (ride operations). Try creating riders/drivers, booking a ride, then have a driver accept or cancel.
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    /**********************
+     * Pattern Implementations
+     **********************/
+
+    // ---------------- Observer (Subject / Observers)
+    class Subject {
+      constructor(){ this.observers = new Set(); }
+      subscribe(o){ this.observers.add(o); }
+      unsubscribe(o){ this.observers.delete(o); }
+      notify(event){ for(const o of this.observers) o.update(event); }
+    }
+
+    class Driver {
+      constructor(name){ this.name = name; this.id = Driver._next++; }
+      update(event){ /* Drivers could react to events too */ }
+      toString(){ return `${this.name} (id:${this.id})`; }
+    }
+    Driver._next = 1;
+
+    class Rider {
+      constructor(name){ this.name = name; this.id = Rider._next++; this.notifications = []; }
+      update(event){
+        const text = `[${new Date().toLocaleTimeString()}] ${event}`;
+        this.notifications.push(text);
+        log(`Notify ${this.name}: ${event}`);
+      }
+      toString(){ return `${this.name} (id:${this.id})`; }
+    }
+    Rider._next = 1;
+
+    // RideRequest is a Subject. Drivers subscribe to it.
+    class RideRequest extends Subject {
+      constructor(rider, distanceKm, fareCalculator){
+        super();
+        this.id = RideRequest._next++;
+        this.rider = rider;
+        this.distanceKm = distanceKm;
+        this.status = 'CREATED'; // CREATED, ACCEPTED, CANCELLED, COMPLETED
+        this.driver = null;
+        this.fareCalculator = fareCalculator;
+        this.fare = this.computeFare();
+      }
+      computeFare(){ return this.fareCalculator.calculate(this.distanceKm); }
+      accept(driver){ if(this.status !== 'CREATED') return false; this.driver = driver; this.status = 'ACCEPTED'; this.notify(`${driver.name} accepted ride ${this.id}`); return true; }
+      cancel(driver){ if(this.status !== 'CREATED' && this.status !== 'ACCEPTED') return false; this.status = 'CANCELLED'; this.notify(`${driver.name} cancelled ride ${this.id}`); return true; }
+      complete(){ if(this.status !== 'ACCEPTED') return false; this.status = 'COMPLETED'; this.notify(`Ride ${this.id} completed by ${this.driver.name}`); return true; }
+      toJSON(){ return {id:this.id, rider:this.rider.name, distanceKm:this.distanceKm, fare:this.fare, status:this.status, driver:this.driver?this.driver.name:null}; }
+    }
+    RideRequest._next = 1;
+
+    // ---------------- Strategy (Fare calculation)
+    class FareStrategy {
+      calculate(distanceKm){ throw new Error('calculate() not implemented'); }
+    }
+    class NormalFare extends FareStrategy{ calculate(d){ return Math.max(3, d*10); } } // base 10 per km, min fare 3
+    class SurgeFare extends FareStrategy{ constructor(multiplier=1.5){ super(); this.multiplier = multiplier; } calculate(d){ return Math.max(3, d*10*this.multiplier); } }
+    class DiscountFare extends FareStrategy{ constructor(discountPct=0.2){ super(); this.discountPct = discountPct; } calculate(d){ return Math.max(3, d*10*(1-this.discountPct)); } }
+
+    // FareCalculator context (wraps the strategy)
+    class FareCalculator {
+      constructor(strategy){ this.strategy = strategy; }
+      setStrategy(s){ this.strategy = s; }
+      calculate(distanceKm){ return Number(this.strategy.calculate(distanceKm).toFixed(2)); }
+    }
+
+    // ---------------- Command Pattern
+    class Command {
+      execute(){ throw new Error('execute not implemented'); }
+      undo(){ /* optional */ }
+    }
+
+    // invoker that keeps history
+    class CommandInvoker {
+      constructor(){ this.history = []; }
+      execute(cmd){ const res = cmd.execute(); this.history.push(cmd); return res; }
+      undoLast(){ const cmd = this.history.pop(); if(cmd && cmd.undo) cmd.undo(); }
+    }
+
+    // Concrete Commands: BookRide, CancelRide, RateRide
+    class BookRideCommand extends Command{
+      constructor(system, rider, distance, fareStrategyName){ super(); this.system = system; this.rider = rider; this.distance = distance; this.strategyName = fareStrategyName; this.createdRide = null; }
+      execute(){
+        const ride = this.system.createRide(this.rider, this.distance, this.strategyName);
+        this.createdRide = ride;
+        log(`Command: BookRide -> rideId=${ride.id} fare=${ride.fare}`);
+        return ride;
+      }
+      undo(){ if(this.createdRide) this.system.forceCancel(this.createdRide); }
+    }
+
+    class CancelRideCommand extends Command{
+      constructor(system, driver, ride){ super(); this.system = system; this.driver = driver; this.ride = ride; }
+      execute(){ const success = this.system.driverCancelRide(this.driver, this.ride); log(`Command: CancelRide -> rideId=${this.ride.id} success=${success}`); return success; }
+    }
+
+    class AcceptRideCommand extends Command{
+      constructor(system, driver, ride){ super(); this.system = system; this.driver = driver; this.ride = ride; }
+      execute(){ const success = this.system.driverAcceptRide(this.driver, this.ride); log(`Command: AcceptRide -> rideId=${this.ride.id} success=${success}`); return success; }
+    }
+
+    class RateRideCommand extends Command{
+      constructor(system, ride, rating){ super(); this.system = system; this.ride = ride; this.rating = rating; }
+      execute(){ const res = this.system.rateRide(this.ride, this.rating); log(`Command: RateRide -> rideId=${this.ride.id} rating=${this.rating}`); return res; }
+    }
+
+    // ---------------- System (manages entities & rides)
+    class RideSystem{
+      constructor(){ this.riders = []; this.drivers = []; this.activeRides = new Map(); this.invoker = new CommandInvoker(); }
+      addRider(r){ this.riders.push(r); }
+      addDriver(d){ this.drivers.push(d); }
+      createRide(rider, distanceKm, strategyName){
+        const strategy = chooseStrategy(strategyName);
+        const fareCalc = new FareCalculator(strategy);
+        const ride = new RideRequest(rider, distanceKm, fareCalc);
+        // subscribe rider to notifications
+        ride.subscribe(rider);
+        // by default, subscribe all drivers so they can see requests
+        for(const d of this.drivers) ride.subscribe({ update: (evt)=> log(`[Driver ${d.name} notified] ${evt}`) });
+        this.activeRides.set(ride.id, ride);
+        return ride;
+      }
+      forceCancel(ride){ if(this.activeRides.has(ride.id)){ ride.status='CANCELLED'; ride.notify('System force-cancelled ride'); this.activeRides.delete(ride.id); } }
+      driverAcceptRide(driver, ride){ const success = ride.accept(driver); if(success){ this.activeRides.set(ride.id, ride); return true; } return false; }
+      driverCancelRide(driver, ride){ const success = ride.cancel(driver); if(success){ this.activeRides.delete(ride.id); return true; } return false; }
+      rateRide(ride, rating){ if(ride.status !== 'COMPLETED' && ride.status !== 'ACCEPTED') return false; ride.rating = rating; this.activeRides.delete(ride.id); ride.notify(`Rider rated ride ${ride.id} with ${rating}`); return true; }
+    }
+
+    // helper to pick strategy
+    function chooseStrategy(name){ if(name === 'surge') return new SurgeFare(1.5); if(name === 'discount') return new DiscountFare(0.2); return new NormalFare(); }
+
+    /**********************
+     * UI glue & demo wiring
+     **********************/
+    const system = new RideSystem();
+    const invoker = system.invoker;
+
+    const $ = id => document.getElementById(id);
+    const logEl = $('log');
+    const activeEl = $('activeRide');
+
+    function log(msg){ const p = document.createElement('div'); p.textContent = msg; logEl.appendChild(p); logEl.scrollTop = logEl.scrollHeight; }
+    function renderLists(){ const rSel = $('ridersList'); const dSel = $('driversList'); const selectedRider = $('selectedRider'); const actionDriver = $('actionDriver');
+      [rSel, selectedRider].forEach(sel=>{ sel.innerHTML = ''; for(const r of system.riders){ const opt = document.createElement('option'); opt.value = r.id; opt.textContent = r.toString(); sel.appendChild(opt); } });
+      [dSel, actionDriver].forEach(sel=>{ sel.innerHTML = ''; for(const d of system.drivers){ const opt = document.createElement('option'); opt.value = d.id; opt.textContent = d.toString(); sel.appendChild(opt); } });
+    }
+
+    function findRiderById(id){ return system.riders.find(r=>r.id==id); }
+    function findDriverById(id){ return system.drivers.find(d=>d.id==id); }
+    function findRideById(id){ return system.activeRides.get(Number(id)); }
+
+    // create rider/driver
+    $('createRider').addEventListener('click', ()=>{
+      const name = $('riderName').value.trim() || `Rider${system.riders.length+1}`;
+      const r = new Rider(name);
+      system.addRider(r);
+      log(`Created rider: ${r}`);
+      renderLists();
+    });
+    $('createDriver').addEventListener('click', ()=>{
+      const name = $('driverName').value.trim() || `Driver${system.drivers.length+1}`;
+      const d = new Driver(name);
+      system.addDriver(d);
+      log(`Created driver: ${d}`);
+      renderLists();
+    });
+
+    // Book ride command
+    $('bookBtn').addEventListener('click', ()=>{
+      const riderId = $('selectedRider').value;
+      if(!riderId){ alert('Please create/select a rider first'); return; }
+      const rider = findRiderById(riderId);
+      const distance = Number($('distance').value) || 1;
+      const strat = $('fareStrategy').value;
+      const cmd = new BookRideCommand(system, rider, distance, strat);
+      const ride = invoker.execute(cmd);
+      showActiveRide(ride);
+    });
+
+    $('showRideBtn').addEventListener('click', ()=>{
+      const it = system.activeRides.values().next(); if(it.done){ activeEl.textContent = 'No active rides'; return; } showActiveRide(it.value);
+    });
+
+    $('clearLog').addEventListener('click', ()=>{ logEl.innerHTML=''; });
+
+    // Driver actions use commands
+    $('acceptRide').addEventListener('click', ()=>{
+      const driver = findDriverById($('actionDriver').value);
+      const ride = Array.from(system.activeRides.values()).find(r=>r.status==='CREATED');
+      if(!driver || !ride){ alert('No driver or no created rides available'); return; }
+      const cmd = new AcceptRideCommand(system, driver, ride);
+      invoker.execute(cmd);
+      showActiveRide(ride);
+    });
+    $('cancelRide').addEventListener('click', ()=>{
+      const driver = findDriverById($('actionDriver').value);
+      const ride = Array.from(system.activeRides.values())[0]; if(!ride){ alert('No active ride'); return; }
+      const cmd = new CancelRideCommand(system, driver, ride);
+      invoker.execute(cmd);
+      showActiveRide(ride);
+    });
+    $('rateRide').addEventListener('click', ()=>{
+      const ride = Array.from(system.activeRides.values())[0]; if(!ride){ alert('No active ride to rate'); return; }
+      const rating = Number($('rating').value) || 5;
+      const cmd = new RateRideCommand(system, ride, rating);
+      invoker.execute(cmd);
+      showActiveRide(ride);
+    });
+
+    function showActiveRide(ride){ if(!ride){ activeEl.textContent = 'No active ride'; return; } activeEl.textContent = JSON.stringify(ride.toJSON(), null, 2); }
+
+    // small demo seed
+    (function seed(){
+      ['Alice','Sam'].forEach(n=>{ const r=new Rider(n); system.addRider(r); });
+      ['Bob','Charlie'].forEach(n=>{ const d=new Driver(n); system.addDriver(d); });
+      renderLists();
+      log('Demo seeded: 2 riders, 2 drivers');
+    })();
+
+  </script>
+</body>
+</html>
