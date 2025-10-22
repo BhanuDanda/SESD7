@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Healthcare Appointment Booking — MVC (Single File Demo)</title>
+  <style>
+    /* Simple styling for demo */
+    :root{font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;}
+    body{margin:0;padding:20px;background:#f6f8fb;color:#1f2937}
+    header{display:flex;gap:16px;align-items:center}
+    h1{margin:0;font-size:20px}
+    .app{max-width:900px;margin:20px auto;background:#ffffff;padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(20,20,40,0.06)}
+    form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+    label{display:block;font-size:13px;margin-bottom:6px}
+    input,select,button,textarea{padding:8px;border-radius:8px;border:1px solid #d1d5db;font-size:14px}
+    .full{grid-column:1 / -1}
+    .controls{display:flex;gap:8px;align-items:center}
+    .appointments{margin-top:14px}
+    .card{padding:12px;border-radius:10px;border:1px solid #eef2f7;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+    .muted{color:#6b7280;font-size:13px}
+    .svg-u{width:100%;height:220px;border-radius:8px;background:#fff;padding:10px}
+    pre{background:#0f172a;color:#e6eef8;padding:12px;border-radius:8px;overflow:auto}
+    .help{font-size:13px;color:#374151}
+    .btn{cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="app" id="appContainer">
+    <header>
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C10.8954 2 10 2.89543 10 4V6H14V4C14 2.89543 13.1046 2 12 2Z" fill="#2563EB"/><path d="M5 8C4.44772 8 4 8.44772 4 9V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V9C20 8.44772 19.5523 8 19 8H5Z" fill="#1E293B"/></svg>
+      <div>
+        <h1>Healthcare Appointment Booking — MVC (Demo)</h1>
+        <div class="muted">Single-file demo showing Model, View & Controller separation + UML component diagram & docs</div>
+      </div>
+    </header>
+
+    <!-- VIEW: UI (kept minimal). Controller wires interactions; Model handles persistence (localStorage simulated DB). -->
+
+    <section style="margin-top:14px">
+      <form id="appointmentForm">
+        <div>
+          <label>Patient Name</label>
+          <input id="patientName" required />
+        </div>
+        <div>
+          <label>Doctor / Department</label>
+          <select id="department">
+            <option>General Physician</option>
+            <option>Cardiology</option>
+            <option>Dermatology</option>
+            <option>Orthopedics</option>
+            <option>ENT</option>
+          </select>
+        </div>
+        <div>
+          <label>Date</label>
+          <input id="date" type="date" required />
+        </div>
+        <div>
+          <label>Time</label>
+          <input id="time" type="time" required />
+        </div>
+        <div class="full">
+          <label>Notes (optional)</label>
+          <textarea id="notes" rows="2"></textarea>
+        </div>
+
+        <div class="controls full">
+          <button type="submit" id="saveBtn" class="btn">Book Appointment</button>
+          <button type="button" id="clearAll" class="btn">Clear All (Demo)</button>
+          <input id="search" placeholder="Search by patient or department" style="flex:1;padding:8px;border-radius:8px;border:1px solid #e6e9ef" />
+        </div>
+      </form>
+
+      <div class="appointments">
+        <h3>Upcoming Appointments</h3>
+        <div id="list"></div>
+      </div>
+    </section>
+
+    <hr style="margin:18px 0" />
+
+    <section>
+      <h3>UML Component Diagram (inline SVG)</h3>
+      <!-- Simple UML component-like diagram to satisfy the requirement -->
+      <div class="svg-u" aria-hidden>
+        <svg width="100%" height="100%" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="20" width="220" height="140" rx="8" fill="#eef2ff" stroke="#c7d2fe"/>
+          <text x="30" y="45" font-family="sans-serif" font-size="14" fill="#1f2937">User Interface (View)</text>
+
+          <rect x="290" y="20" width="220" height="140" rx="8" fill="#ecfeff" stroke="#bdeafe"/>
+          <text x="310" y="45" font-family="sans-serif" font-size="14" fill="#1f2937">Controller</text>
+
+          <rect x="570" y="20" width="220" height="140" rx="8" fill="#f0fdf4" stroke="#bbf7d0"/>
+          <text x="590" y="45" font-family="sans-serif" font-size="14" fill="#1f2937">Model + Persistence</text>
+
+          <!-- arrows -->
+          <line x1="230" y1="90" x2="290" y2="90" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+          <line x1="510" y1="90" x2="570" y2="90" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+
+          <defs>
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="6" refY="5" orient="auto">
+              <path d="M0 0 L10 5 L0 10 z" fill="#374151" />
+            </marker>
+          </defs>
+
+          <text x="120" y="120" font-family="sans-serif" font-size="12" fill="#374151" text-anchor="middle">shows data / triggers events</text>
+          <text x="400" y="120" font-family="sans-serif" font-size="12" fill="#374151" text-anchor="middle">validates & transforms</text>
+          <text x="680" y="120" font-family="sans-serif" font-size="12" fill="#374151" text-anchor="middle">stores / retrieves</text>
+        </svg>
+      </div>
+
+      <h3 style="margin-top:12px">Documentation & GitHub Upload Instructions</h3>
+      <div class="help">
+        <p>This single-file demo implements a clear separation of concerns using MVC inside one HTML file for demonstration. The JS contains three classes:</p>
+        <ul>
+          <li><strong>AppointmentModel</strong> — data operations (acts as the Model). Uses localStorage to simulate a database.</li>
+          <li><strong>AppointmentView</strong> — DOM rendering and UI helpers (View).</li>
+          <li><strong>AppointmentController</strong> — connects UI events to model actions and orchestrates updates (Controller).</li>
+        </ul>
+
+        <p><strong>To upload to GitHub</strong> (recommended real project layout uses multiple files):</p>
+        <pre>
+# create repo locally
+git init
+git add Healthcare-Appointment-MVC.html README.md
+git commit -m "Initial commit: MVC demo single-file"
+# create remote repo on GitHub and then
+git remote add origin git@github.com:YOURUSERNAME/healthcare-mvc-demo.git
+git push -u origin main
+        </pre>
+
+        <p>Recommended project structure for a real MVC web app (separate files):</p>
+        <pre>
+/healthcare-mvc-demo
+  /public
+    index.html
+    /css
+    /js
+      model.js
+      view.js
+      controller.js
+  /server (optional)
+    api.js
+    db.js
+  README.md
+  LICENSE
+        </pre>
+      </div>
+
+      <h3>Why MVC improves maintainability & testability</h3>
+      <div class="help">
+        <ol>
+          <li><strong>Separation of concerns:</strong> UI code (View) doesn't contain business logic or storage code. That limits side effects and makes each part easier to reason about.</li>
+          <li><strong>Independent testing:</strong> Models can be unit-tested without a UI, and controllers can be tested by mocking the Model and View. This reduces the need for end-to-end tests for many scenarios.</li>
+          <li><strong>Easier changes:</strong> You can swap the View (web UI, mobile client) without changing business rules in the Model. Similarly, swapping persistence (localStorage → server DB) affects only Model code.</li>
+          <li><strong>Cleaner collaboration:</strong> Frontend devs and backend/devops can work on different layers concurrently with minimal merge conflicts.</li>
+        </ol>
+      </div>
+
+    </section>
+
+    <hr />
+    <footer class="muted">This file is a demo. For a production-ready system, split these components into separate files and implement secure server-side storage, authentication, input validation, and tests.</footer>
+  </div>
+
+  <script>
+    /******************************************************************
+     *  MVC Implementation (single-file demo)
+     *  - AppointmentModel: Handles data persistence (localStorage used for demo)
+     *  - AppointmentView: Handles DOM rendering and user-facing UI
+     *  - AppointmentController: Business logic, wiring, validation
+     ******************************************************************/
+
+    /********************* Model **************************/
+    class AppointmentModel {
+      constructor(storageKey = 'appointments_demo_v1'){
+        this.storageKey = storageKey;
+        this._ensureInit();
+      }
+      _ensureInit(){
+        if(!localStorage.getItem(this.storageKey)){
+          localStorage.setItem(this.storageKey, JSON.stringify([]));
+        }
+      }
+      _readAll(){
+        return JSON.parse(localStorage.getItem(this.storageKey) || '[]');
+      }
+      _writeAll(arr){
+        localStorage.setItem(this.storageKey, JSON.stringify(arr));
+      }
+      list(){
+        return this._readAll();
+      }
+      add(apt){
+        const all = this._readAll();
+        apt.id = this._generateId();
+        all.push(apt);
+        this._writeAll(all);
+        return apt;
+      }
+      remove(id){
+        let all = this._readAll();
+        const beforeLen = all.length;
+        all = all.filter(a => a.id !== id);
+        this._writeAll(all);
+        return beforeLen !== all.length;
+      }
+      clearAll(){
+        this._writeAll([]);
+      }
+      _generateId(){
+        return 'apt_' + Math.random().toString(36).slice(2,9);
+      }
+      query(filter){
+        const all = this._readAll();
+        if(!filter) return all;
+        const q = filter.toLowerCase();
+        return all.filter(a => (a.patient||'').toLowerCase().includes(q) || (a.department||'').toLowerCase().includes(q));
+      }
+    }
+
+    /********************* View **************************/
+    class AppointmentView {
+      constructor(root){
+        this.root = root;
+        this.listEl = root.querySelector('#list');
+        this.form = root.querySelector('#appointmentForm');
+        this.search = root.querySelector('#search');
+      }
+      renderList(items){
+        if(items.length === 0){
+          this.listEl.innerHTML = '<div class="muted">No appointments yet.</div>';
+          return;
+        }
+        this.listEl.innerHTML = '';
+        items.forEach(it => {
+          const div = document.createElement('div');
+          div.className = 'card';
+          div.innerHTML = `
+            <div>
+              <div><strong>${escapeHtml(it.patient)}</strong> <span class="muted">(${escapeHtml(it.department)})</span></div>
+              <div class="muted">${escapeHtml(it.date)} ${escapeHtml(it.time)} • ${escapeHtml(it.notes||'')}</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button data-id="${it.id}" class="btn cancel">Cancel</button>
+            </div>
+          `;
+          this.listEl.appendChild(div);
+        });
+      }
+      bindAdd(handler){
+        this.form.addEventListener('submit', e => {
+          e.preventDefault();
+          const patient = this.root.querySelector('#patientName').value.trim();
+          const department = this.root.querySelector('#department').value;
+          const date = this.root.querySelector('#date').value;
+          const time = this.root.querySelector('#time').value;
+          const notes = this.root.querySelector('#notes').value.trim();
+          handler({patient,department,date,time,notes});
+          this.form.reset();
+        });
+      }
+      bindCancel(handler){
+        this.listEl.addEventListener('click', e => {
+          if(e.target.classList.contains('cancel')){
+            const id = e.target.getAttribute('data-id');
+            handler(id);
+          }
+        });
+      }
+      bindClearAll(handler){
+        this.root.querySelector('#clearAll').addEventListener('click', e => {
+          if(confirm('Clear all appointments? This is a demo action.')) handler();
+        });
+      }
+      bindSearch(handler){
+        this.search.addEventListener('input', e => {
+          handler(e.target.value);
+        });
+      }
+    }
+
+    /********************* Controller **************************/
+    class AppointmentController {
+      constructor(model, view){
+        this.model = model;
+        this.view = view;
+
+        // initial render
+        this.view.renderList(this.model.list());
+
+        // wire interactions
+        this.view.bindAdd(this.handleAdd.bind(this));
+        this.view.bindCancel(this.handleCancel.bind(this));
+        this.view.bindClearAll(this.handleClearAll.bind(this));
+        this.view.bindSearch(this.handleSearch.bind(this));
+      }
+      validate(apt){
+        if(!apt.patient) return 'Patient name required';
+        if(!apt.date) return 'Date required';
+        if(!apt.time) return 'Time required';
+        // basic: don't allow past dates (simple check)
+        const now = new Date();
+        const aptDate = new Date(apt.date + 'T' + apt.time);
+        if(aptDate < now) return 'Cannot book an appointment in the past (demo)';
+        return null;
+      }
+      handleAdd(apt){
+        const err = this.validate(apt);
+        if(err){
+          alert(err); // simple demo alert — replace with nicer UI in prod
+          return;
+        }
+        const saved = this.model.add(apt);
+        this.view.renderList(this.model.list());
+      }
+      handleCancel(id){
+        if(!confirm('Cancel this appointment?')) return;
+        const ok = this.model.remove(id);
+        if(ok) this.view.renderList(this.model.list());
+      }
+      handleClearAll(){
+        this.model.clearAll();
+        this.view.renderList(this.model.list());
+      }
+      handleSearch(q){
+        const results = this.model.query(q);
+        this.view.renderList(results);
+      }
+    }
+
+    /********************* Helpers **************************/
+    function escapeHtml(s){
+      if(!s) return '';
+      return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+    }
+
+    // bootstrap
+    (function(){
+      const model = new AppointmentModel();
+      const view = new AppointmentView(document.getElementById('appContainer'));
+      const controller = new AppointmentController(model, view);
+      // expose for debugging in demo
+      window.__MVC = {model,view,controller};
+    })();
+
+  </script>
+</body>
+</html>
