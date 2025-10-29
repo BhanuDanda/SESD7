@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #74ebd5, #acb6e5);
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    header {
+      text-align: center;
+      padding: 20px;
+      background-color: rgba(255,255,255,0.8);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    h1 {
+      margin: 0;
+      font-size: 2em;
+    }
+    #search-container {
+      display: flex;
+      justify-content: center;
+      margin: 20px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      font-size: 1em;
+      width: 250px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      outline: none;
+    }
+    button {
+      padding: 10px 15px;
+      margin-left: 10px;
+      background-color: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #357abd;
+    }
+    #current-weather, #forecast {
+      max-width: 900px;
+      margin: 20px auto;
+      background: rgba(255,255,255,0.9);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    #forecast-container {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+    }
+    .forecast-card {
+      background-color: #e3f2fd;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      margin: 10px;
+      width: 120px;
+    }
+    .forecast-card img {
+      width: 50px;
+      height: 50px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🌤️ Weather Dashboard</h1>
+  </header>
+
+  <div id="search-container">
+    <input type="text" id="cityInput" placeholder="Enter city name (e.g., Delhi)" />
+    <button onclick="getWeather()">Search</button>
+  </div>
+
+  <div id="current-weather">
+    <h2>Current Weather</h2>
+    <p id="city-name"></p>
+    <p id="temperature"></p>
+    <p id="description"></p>
+    <img id="weather-icon" alt="" />
+  </div>
+
+  <div id="forecast">
+    <h2>5-Day Forecast</h2>
+    <div id="forecast-container"></div>
+  </div>
+
+  <script>
+    const apiKey = "YOUR_API_KEY_HERE";
+
+    async function getWeather() {
+      const city = document.getElementById("cityInput").value.trim();
+      if (!city) {
+        alert("Please enter a city name!");
+        return;
+      }
+
+      // Current weather API
+      const currentUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city},IN&appid=${apiKey}&units=metric`;
+
+      // Forecast API
+      const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city},IN&appid=${apiKey}&units=metric`;
+
+      try {
+        // Fetch both data in parallel
+        const [currentRes, forecastRes] = await Promise.all([
+          fetch(currentUrl),
+          fetch(forecastUrl)
+        ]);
+
+        if (!currentRes.ok || !forecastRes.ok) {
+          alert("City not found! Please try again.");
+          return;
+        }
+
+        const currentData = await currentRes.json();
+        const forecastData = await forecastRes.json();
+
+        displayCurrentWeather(currentData);
+        displayForecast(forecastData);
+      } catch (error) {
+        console.error(error);
+        alert("Error fetching weather data!");
+      }
+    }
+
+    function displayCurrentWeather(data) {
+      document.getElementById("city-name").innerHTML = `📍 ${data.name}`;
+      document.getElementById("temperature").innerHTML = `🌡️ Temperature: ${data.main.temp.toFixed(1)} °C`;
+      document.getElementById("description").innerHTML = `🌥️ ${data.weather[0].description}`;
+      document.getElementById("weather-icon").src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+    }
+
+    function displayForecast(data) {
+      const forecastContainer = document.getElementById("forecast-container");
+      forecastContainer.innerHTML = ""; // Clear previous forecast
+
+      // OpenWeatherMap provides 3-hour interval data, so we pick one per day (e.g., at 12:00)
+      const dailyData = data.list.filter(item => item.dt_txt.includes("12:00:00"));
+
+      dailyData.forEach(day => {
+        const date = new Date(day.dt * 1000);
+        const card = document.createElement("div");
+        card.classList.add("forecast-card");
+        card.innerHTML = `
+          <h4>${date.toDateString().split(' ').slice(0, 3).join(' ')}</h4>
+          <img src="https://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png" alt="">
+          <p>${day.main.temp.toFixed(1)} °C</p>
+          <p>${day.weather[0].description}</p>
+        `;
+        forecastContainer.appendChild(card);
+      });
+    }
+  </script>
+</body>
+</html>
