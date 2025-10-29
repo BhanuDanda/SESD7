@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #4facfe, #00f2fe);
+      color: #333;
+      text-align: center;
+      padding: 30px;
+    }
+
+    h1 {
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    input {
+      padding: 10px;
+      width: 250px;
+      border: none;
+      border-radius: 5px;
+      margin-right: 10px;
+      outline: none;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      background-color: #0078ff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #005fcc;
+    }
+
+    #weather {
+      margin-top: 30px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      padding: 20px;
+      display: inline-block;
+    }
+
+    #forecast {
+      margin-top: 30px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .day {
+      background: rgba(255,255,255,0.9);
+      border-radius: 10px;
+      padding: 15px;
+      width: 120px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .day h4 {
+      margin-bottom: 5px;
+      color: #0078ff;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌤️ Weather Dashboard</h1>
+
+  <input type="text" id="cityInput" placeholder="Enter any Indian city (e.g., Pune, Delhi)" />
+  <button onclick="showWeather()">Search</button>
+
+  <div id="weather"></div>
+  <div id="forecast"></div>
+
+  <script>
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function getRandomDescription() {
+      const descriptions = [
+        "Sunny", "Partly Cloudy", "Rainy", "Thunderstorms", "Drizzle", 
+        "Clear Sky", "Overcast", "Humid", "Windy", "Hot and Dry"
+      ];
+      return descriptions[randomInt(0, descriptions.length - 1)];
+    }
+
+    function showWeather() {
+      const cityInput = document.getElementById("cityInput").value.trim();
+      const weatherDiv = document.getElementById("weather");
+      const forecastDiv = document.getElementById("forecast");
+
+      if (!cityInput) {
+        alert("Please enter a city name!");
+        return;
+      }
+
+      const city = cityInput.charAt(0).toUpperCase() + cityInput.slice(1).toLowerCase();
+      
+      // Generate random temperature between 20°C and 40°C
+      const currentTemp = randomInt(20, 40);
+      const currentDesc = getRandomDescription();
+
+      // Generate random 5-day forecast
+      const forecast = [];
+      for (let i = 1; i <= 5; i++) {
+        forecast.push({
+          day: `Day ${i}`,
+          temp: randomInt(20, 40),
+          desc: getRandomDescription()
+        });
+      }
+
+      // Display current weather
+      weatherDiv.innerHTML = `
+        <h2>${city}</h2>
+        <p><strong>Temperature:</strong> ${currentTemp} °C</p>
+        <p><strong>Condition:</strong> ${currentDesc}</p>
+      `;
+
+      // Display forecast
+      forecastDiv.innerHTML = "<h2>5-Day Forecast</h2>";
+      forecastDiv.innerHTML += forecast.map(day => `
+        <div class="day">
+          <h4>${day.day}</h4>
+          <p>${day.temp} °C</p>
+          <p>${day.desc}</p>
+        </div>
+      `).join("");
+    }
+
+    // Default city shown on load
+    window.onload = function() {
+      document.getElementById("cityInput").value = "Delhi";
+      showWeather();
+    };
+  </script>
+</body>
+</html>
